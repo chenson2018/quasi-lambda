@@ -62,7 +62,7 @@ aexp :: Parser LExp
 aexp = 
     try $ Var <$> V <$> ident
     <|>
-    do lexeme $ (char '\\' <|> char 'l')
+    do lexeme $ char '\\'
        v <- ident
        lexeme $ char '.'
        Lam (V v) <$> pexp
@@ -71,14 +71,15 @@ aexp =
 {- ORMOLU_ENABLE -}
 
 -- setting up quasiquoting
+-- TODO extend to patterns (and types??)
 
 expr :: QuasiQuoter
 expr = QuasiQuoter {
       quoteExp  = \str -> do
         -- TODO fix this for errors
-        l <- location
+        _ <- location
         e <- runIO $ parseIO (topLevel pexp) str
-        dataToExpQ (const Nothing `extQ` metaExp (free e)) e
+        dataToExpQ (const Nothing) e
       , quotePat = undefined
 --    , quotePat  = \str -> do
 --        -- TODO fix this for errors
