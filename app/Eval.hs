@@ -3,8 +3,8 @@
 
 module Eval where
 
-import Data.List
-import Lambda
+import Data.List (union, (\\))
+import Lambda (Exp (App, Lam, Var), Var (V), ex, vs)
 import Text.Printf (printf)
 
 free :: Exp -> [Var]
@@ -31,23 +31,33 @@ subst e' x' y' = subst' (allFresh \\ occurs e' `union` occurs y') e' x' y'
       | otherwise = e
     subst' fresh e@[ex| \$v:v . $e:body|] x y
       | v == x = e
-      -- TODO metavars here???
-      | v `elem` free y = Lam v' (subst' fresh' body' x y)
-      | otherwise = Lam v (subst' fresh body x y)
+      | otherwise =
+          let (var, f, b) = if v `elem` free y then (v', fresh', body') else (v, fresh, body)
+           in let sub = subst' f b x y
+               in [ex| \$v:var . $e:sub|]
       where
         v' : fresh' = fresh
         body' = subst' (error "fresh variables not so fresh") body v (Var v')
     subst' fresh [ex| $e:e1 $e:e2|] x y = App (subst' fresh e1 x y) (subst' fresh e2 x y)
     subst' _ _ _ _ = undefined
 
-eval :: Exp -> Exp
-eval e@(Var _) = e
-eval e@(Lam _ _) = e
-eval (App e1 e2) =
-  case eval e1 of
-    Lam v body -> eval (subst body v e2)
-    e' -> App e' (eval e2)
-eval _ = undefined
+call_by_value :: Exp -> Exp
+call_by_value e@(Var _) = e
+call_by_value e@(Lam _ _) = e
+call_by_value [ex|$e:e1 $e:e2|] =
+  case call_by_value e1 of
+    [ex|\$v:v . $e:body|] -> call_by_value (subst body v e2)
+    e' -> App e' (call_by_value e2)
+call_by_value _ = undefined
+
+full_beta :: Exp -> Exp
+full_beta [ex|$e:e1 $e:e2|] =
+  case full_beta e1 of
+    [ex|\$v:v . $e:body|] -> full_beta (subst body v e2)
+    e' -> App e' (full_beta e2)
+full_beta e@(Var _) = e
+full_beta [ex| \$v:v . $e:body|] = Lam v (full_beta body)
+full_beta _ = undefined
 
 -- pretty printer
 -- all applications have explicit parens
