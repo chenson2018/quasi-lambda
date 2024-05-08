@@ -25,9 +25,9 @@ main =
     let plus = [ex|\m. \n. \s. \z. m s (n s z)|]
 
     let zero = [ex| \s. \z. z|]
-    let one =  full_beta [ex| $e:scc $e:zero |]
-    let two =  full_beta [ex| $e:scc $e:one |]
-    let three =  full_beta [ex| $e:scc $e:two |]
+    let one = full_beta [ex| $e:scc $e:zero |]
+    let two = full_beta [ex| $e:scc $e:one |]
+    let three = full_beta [ex| $e:scc $e:two |]
 
     putStrLn $ pp $ one
     putStrLn $ pp $ [ex| \s. \z. s z |]

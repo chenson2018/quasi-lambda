@@ -4,7 +4,7 @@
 module Eval where
 
 import Data.List (union, (\\))
-import Lambda (Exp (App, Lam, Var), Var (V), ex, vs)
+import Lambda (Exp (..), Var (..), ex, vs)
 import Text.Printf (printf)
 
 free :: Exp -> [Var]
@@ -42,22 +42,19 @@ subst e' x' y' = subst' (allFresh \\ occurs e' `union` occurs y') e' x' y'
     subst' _ _ _ _ = undefined
 
 call_by_value :: Exp -> Exp
-call_by_value e@(Var _) = e
-call_by_value e@(Lam _ _) = e
 call_by_value [ex|$e:e1 $e:e2|] =
   case call_by_value e1 of
     [ex|\$v:v . $e:body|] -> call_by_value (subst body v e2)
     e' -> App e' (call_by_value e2)
-call_by_value _ = undefined
+call_by_value e = e
 
 full_beta :: Exp -> Exp
 full_beta [ex|$e:e1 $e:e2|] =
   case full_beta e1 of
     [ex|\$v:v . $e:body|] -> full_beta (subst body v e2)
     e' -> App e' (full_beta e2)
-full_beta e@(Var _) = e
 full_beta [ex| \$v:v . $e:body|] = Lam v (full_beta body)
-full_beta _ = undefined
+full_beta e = e
 
 -- pretty printer
 -- all applications have explicit parens
