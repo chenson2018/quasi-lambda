@@ -9,6 +9,5 @@ import Lambda
 main :: IO ()
 main =
   do
-    print [expr| x |]
-    print [expr| \x . x |]
-    print [expr| (\x . x) y |]
+    let example = [ex| (\f. \x . f x) (\x. x) z|]
+    putStrLn $ pp $ eval example

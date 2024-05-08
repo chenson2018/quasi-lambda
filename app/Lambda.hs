@@ -39,25 +39,25 @@ vs :: Var -> String
 vs (V x) = x
 vs (AV x) = x
 
-data LExp
+data Exp
   = Var Var
-  | Lam Var LExp
-  | App LExp LExp
+  | Lam Var Exp
+  | App Exp Exp
   | AE String
   deriving (Show, Data)
 
 -- untyped lambda calculus parser, including antiquotation
 ident :: Parser String
-ident = lexeme $ do c <- lowerChar; cs <- many (alphaNumChar <|> char '_'); return (c : cs)
+ident = lexeme $ do c <- lowerChar; cs <- many (alphaNumChar <|> char '_' <|> char '\''); return (c : cs)
 
 var :: Parser Var
-var = (V <$> ident) <|> (AV <$> (string "$var:" >> ident))
+var = (V <$> ident) <|> (AV <$> (string "$v:" >> ident))
 
-pexp :: Parser LExp
+pexp :: Parser Exp
 pexp = foldl1 App <$> many aexp
 
 {- ORMOLU_DISABLE -}
-aexp :: Parser LExp
+aexp :: Parser Exp
 aexp = 
     (try $ Var <$> var)
     <|>
@@ -68,7 +68,7 @@ aexp =
     <|>
     (between (lexeme $ char '(') (lexeme $ char ')') pexp)
     <|>
-    (AE <$> (string "$exp:" >> ident))
+    (AE <$> (string "$e:" >> ident))
 {- ORMOLU_ENABLE -}
 
 -- setting up quasiquoting
@@ -76,7 +76,7 @@ antiVarE :: Var -> Maybe ExpQ
 antiVarE (AV v) = Just $ varE $ mkName v
 antiVarE _ = Nothing
 
-antiExpE :: LExp -> Maybe ExpQ
+antiExpE :: Exp -> Maybe ExpQ
 antiExpE (AE v) = Just $ varE $ mkName v
 antiExpE _ = Nothing
 
@@ -84,12 +84,12 @@ antiVarP :: Var -> Maybe PatQ
 antiVarP (AV v) = Just $ varP $ mkName v
 antiVarP _ = Nothing
 
-antiExpP :: LExp -> Maybe PatQ
+antiExpP :: Exp -> Maybe PatQ
 antiExpP (AE v) = Just $ varP $ mkName v
 antiExpP _ = Nothing
 
-expr :: QuasiQuoter
-expr =
+ex :: QuasiQuoter
+ex =
   QuasiQuoter
     { quoteExp =
         \str ->
