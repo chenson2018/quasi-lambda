@@ -6,12 +6,14 @@
 
 module Lambda where
 
+import Control.Monad (ap)
+import Data.Char (isLower)
 import Data.Generics (Data, extQ)
 import Data.Void (Void)
 import Language.Haskell.TH (ExpQ, PatQ, mkName, runIO, varE, varP)
 import Language.Haskell.TH.Quote (QuasiQuoter (..), dataToExpQ, dataToPatQ)
-import Text.Megaparsec (Parsec, between, eof, errorBundlePretty, many, parse, try, (<|>))
-import Text.Megaparsec.Char (alphaNumChar, char, lowerChar, space, string)
+import Text.Megaparsec (Parsec, between, eof, errorBundlePretty, many, parse, satisfy, try, (<|>))
+import Text.Megaparsec.Char (alphaNumChar, char, space, string)
 import qualified Text.Megaparsec.Char.Lexer as L
 
 -- Parsing boilerplate
@@ -48,7 +50,13 @@ data Exp
 
 -- untyped lambda calculus parser, including antiquotation
 ident :: Parser String
-ident = lexeme $ do c <- lowerChar; cs <- many (alphaNumChar <|> char '_' <|> char '\''); return (c : cs)
+ident = lexeme $
+  do
+    c <- satisfy $ ap ((&&) . isLower) (/= 'λ')
+    cs <- many (alphaNumChar <|> char '_' <|> char '\'')
+    return (c : cs)
+
+-- ident = lexeme $ do c <- satisfy (\c -> isLower c && c /= 'λ'); cs <- many (alphaNumChar <|> char '_' <|> char '\''); return (c : cs)
 
 var :: Parser Var
 var = (V <$> ident) <|> (AV <$> (string "$v:" >> ident))
@@ -61,7 +69,7 @@ aexp :: Parser Exp
 aexp = 
     (try $ Var <$> var)
     <|>
-    do lexeme $ char '\\'
+    do lexeme $ (char '\\' <|> char 'λ')
        v <- var
        lexeme $ char '.'
        Lam v <$> pexp
