@@ -3,6 +3,7 @@
 
 module Main where
 
+import Control.Exception (assert)
 import Eval
 import Lambda
 
@@ -29,10 +30,5 @@ main =
     let two = full_beta [ex| $e:scc $e:one |]
     let three = full_beta [ex| $e:scc $e:two |]
 
-    putStrLn $ pp $ one
-    putStrLn $ pp $ [ex| λs. λz. s z |]
-    putStrLn ""
-
-    putStrLn $ pp $ full_beta [ex| $e:plus $e:one $e:two|]
-    putStrLn $ pp $ three
-    putStrLn ""
+    print $ assert (one == [ex| λs. λz. s z |]) one
+    print $ assert (three == full_beta [ex| $e:plus $e:one $e:two|]) three

@@ -46,7 +46,7 @@ data Exp
   | Lam Var Exp
   | App Exp Exp
   | AE String
-  deriving (Show, Data)
+  deriving (Show, Data, Eq)
 
 -- untyped lambda calculus parser, including antiquotation
 ident :: Parser String
