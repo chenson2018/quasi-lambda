@@ -97,16 +97,8 @@ antiExpP _ = Nothing
 ex :: QuasiQuoter
 ex =
   QuasiQuoter
-    { quoteExp =
-        \str ->
-          do
-            e <- runIO $ parseIO (topLevel pexp) str
-            dataToExpQ (const Nothing `extQ` antiVarE `extQ` antiExpE) e,
-      quotePat =
-        \str ->
-          do
-            e <- runIO $ parseIO (topLevel pexp) str
-            dataToPatQ (const Nothing `extQ` antiVarP `extQ` antiExpP) e,
+    { quoteExp = \str -> (runIO $ parseIO (topLevel pexp) str) >>= dataToExpQ (const Nothing `extQ` antiVarE `extQ` antiExpE),
+      quotePat = \str -> (runIO $ parseIO (topLevel pexp) str) >>= dataToPatQ (const Nothing `extQ` antiVarP `extQ` antiExpP),
       quoteDec = undefined,
       quoteType = undefined
     }
