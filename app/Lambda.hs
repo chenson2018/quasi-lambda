@@ -56,8 +56,6 @@ ident = lexeme $
     cs <- many (alphaNumChar <|> char '_' <|> char '\'')
     return (c : cs)
 
--- ident = lexeme $ do c <- satisfy (\c -> isLower c && c /= 'λ'); cs <- many (alphaNumChar <|> char '_' <|> char '\''); return (c : cs)
-
 var :: Parser Var
 var = (V <$> ident) <|> (AV <$> (string "$v:" >> ident))
 
